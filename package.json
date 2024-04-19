@@ -9,7 +9,9 @@
     "dev": "bun run build && bunx concurrently \"bun dev:rsc\" \"bun dev:ssr\"",
     "dev:rsc": "bun --conditions='react-server' rsc.ts",
     "dev:ssr": "bun ssr.ts",
-    "format": "prettier --ignore-unknown --write ."
+    "format": "prettier --ignore-unknown --write .",
+    "bunbuild": "bun run predev && bun build.ts",
+    "start": "bun run ssr-bun.ts"
   },
   "prettier": {
     "arrowParens": "avoid",
@@ -42,6 +44,7 @@
     "colors": "^1.4.0",
     "express": "^4.18.3",
     "highlight.js": "^11.9.0",
+    "serve-static-bun": "^0.5.3",
     "sonner": "^1.4.3"
   },
   "devDependencies": {
