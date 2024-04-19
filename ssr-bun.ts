@@ -16,7 +16,7 @@ Bun.serve({
   development: true,
   async fetch(req) {
     const url = new URL(req.url);
-    log(`${req.method} ${url.pathname} `,`(${url.searchParams.get('__RSA') === "true"? "RSC": "SSR"})`.dim)
+    log(`${req.method} ${url.pathname} `, `(${url.searchParams.get('__RSA') === "true" ? "RSC" : "SSR"})`.dim)
 
     if (req.method === "POST" && url.searchParams.get('__RSA') === "true") {
       const rscStream = await rscPOST(req)
@@ -59,7 +59,7 @@ Bun.serve({
     const Root = () => use(response) // Create a root component from the RSC result
 
     const Layout = (await import(resolve("build/_layout"))).default // Load a HTML shell layout
-    return new Response(await renderToReadableStream(createElement(Layout, { children: createElement(Root) }), {
+    const body = await renderToReadableStream(createElement(Layout, { children: createElement(Root) }), {
       bootstrapModules: ["/build/_client.js"],
       //@ts-ignore
       importMap: {
@@ -72,8 +72,14 @@ Bun.serve({
             "/node_modules/react-server-dom-esm/esm/react-server-dom-esm-client.browser.development.js"
         }
       } as any // Ignore TypeScript error
-    }))
-
+    })
+    return new Response(await Bun.readableStreamToText(body), {
+      headers: {
+        "Content-Type": "text/html"
+      }
+    })
+    // returning stream is broken on first call of homepage with suspense boundry
+    return new Response(body)
   },
   port
 });
@@ -92,4 +98,21 @@ function nodeToWebStream(nodeStream: { pipe: Function, on: Function }): Readable
       });
     },
   });
+}
+
+async function streamToString(stream) {
+  const reader = stream.getReader();
+  let result = '';
+
+  while (true) {
+    const { value, done } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    result += new TextDecoder('utf-8').decode(value);
+  }
+
+  return result;
 }
