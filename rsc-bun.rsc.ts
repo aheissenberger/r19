@@ -5,7 +5,7 @@ import Stream from 'node:stream';
 
 const moduleBaseURL = "/build/"
 
-export async function rscGET(req) {
+export async function rscGET(req:Request) {
   const url = new URL(req.url)
   const path = url.pathname === "/" ? "" : url.pathname;
 
@@ -19,7 +19,7 @@ export async function rscGET(req) {
   return renderToPipeableStream(mod, moduleBaseURL)
 }
 
-export async function rscPOST(req) {
+export async function rscPOST(req:Request) {
   const actionReference = String(req.headers.get("rsa-reference"))
   const actionOrigin = String(req.headers.get("rsa-origin"))
   const url = new URL(req.url)
@@ -28,10 +28,9 @@ export async function rscPOST(req) {
   const action = (await import(`.${resolve(filepath)}`))[name]
 
   let args // Decode the arguments
-  if (req.headers.get('content-type').startsWith("multipart/form-data")) {
+  if (req?.body && req.headers.get('content-type')?.startsWith("multipart/form-data")) {
     const rs = webToNodeStream( req.body)
-    //const rs=Stream.Readable.fromWeb(req.body) // not working!!
-    // Use busboy to streamingly parse the reply from form-data.
+    //@ts-ignore
     const bb = busboy({ headers: Object.fromEntries(req.headers.entries()) })
     const reply = decodeReplyFromBusboy(bb, resolve("build/") + "/")
     rs.pipe(bb)

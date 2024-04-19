@@ -61,6 +61,7 @@ Bun.serve({
     const Layout = (await import(resolve("build/_layout"))).default // Load a HTML shell layout
     return new Response(await renderToReadableStream(createElement(Layout, { children: createElement(Root) }), {
       bootstrapModules: ["/build/_client.js"],
+      //@ts-ignore
       importMap: {
         imports: {
           "react/jsx-dev-runtime": "https://esm.sh/react@canary/jsx-dev-runtime.js",
@@ -70,7 +71,7 @@ Bun.serve({
           "react-server-dom-esm/client":
             "/node_modules/react-server-dom-esm/esm/react-server-dom-esm-client.browser.development.js"
         }
-      }
+      } as any // Ignore TypeScript error
     }))
 
   },
@@ -80,13 +81,13 @@ Bun.serve({
 function nodeToWebStream(nodeStream: { pipe: Function, on: Function }): ReadableStream {
   return new ReadableStream({
     start(controller) {
-      nodeStream.on('data', (chunk) => {
+      nodeStream.on('data', (chunk: any) => {
         controller.enqueue(chunk);
       });
       nodeStream.on('end', () => {
         controller.close();
       });
-      nodeStream.on('error', (err) => {
+      nodeStream.on('error', (err: any) => {
         controller.error(err);
       });
     },
