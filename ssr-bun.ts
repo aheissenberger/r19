@@ -3,20 +3,20 @@ import { resolve } from "path"
 import { createElement, use } from "react"
 import { renderToReadableStream } from "react-dom/server"
 import { createFromNodeStream } from "react-server-dom-esm/client.node"
-//import { rscGET, rscPOST } from "./rsc-bun.js"
 import { rscGET, rscPOST } from "./rsc-bun.rsc"
 import Stream from 'node:stream';
+import { log } from "./utils"
 
 const moduleBaseURL = "/build/"
 const port = 3000
 
-console.log(`Listening on http://localhost:${port}`)
+log(`Listening on http://localhost:${port}`)
 
 Bun.serve({
   development: true,
   async fetch(req) {
     const url = new URL(req.url);
-    console.log(url.pathname)
+    log(`${req.method} ${url.pathname} `,`(${url.searchParams.get('__RSA') === "true"? "RSC": "SSR"})`.dim)
 
     if (req.method === "POST" && url.searchParams.get('__RSA') === "true") {
       const rscStream = await rscPOST(req)
@@ -28,7 +28,7 @@ Bun.serve({
     if (url.pathname.match(/\.(?!js).+$/)) return serveStatic("")(req);
     if (url.searchParams.length === 0) {
       const page = (url.pathname === "/" ? "index" : url.pathname.slice(1)) + ".html"
-      console.log("Defaulting to static page:", `"${page}"`)
+      log("Defaulting to static page:", `"${page}"`)
       try {
         return new Response(await Bun.file(resolve("build/static/", "./" + page)).text(), {
           headers: {
@@ -37,7 +37,7 @@ Bun.serve({
 
         })
       } catch {
-        console.log("File not found, falling back to SSR")
+        log("File not found, falling back to SSR")
       }
     }
 
@@ -50,7 +50,7 @@ Bun.serve({
       return new Response(nodeToWebStream(readable))
     }
 
-    console.log("SSR", url.toString())
+    log("SSR", url.toString())
     const rscStream = await rscGET(req)
     const readable = new Stream.PassThrough();
     const response = createFromNodeStream(readable, resolve("build/") + "/", moduleBaseURL)
